@@ -1,3 +1,4 @@
+NABOMBENA dokumentacia is coming
 *This is a documentation for a fictional project, just to show you what I expect. Notice a few key properties:*
 - *no cover page, really*
 - *no copy&pasted assignment text*
