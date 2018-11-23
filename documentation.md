@@ -3,7 +3,7 @@
 Táto aplikácia, je určená pre tých, ktorí si chcú na voľný víkendový večer naplánovať "Tour de Bar", prípadne len hľadajú miesto kam ísť po práci vypnúť. Aplikácia tieto miesta zobrazí na mape s doplňujúcimi informáciami. Konkrétne aplikácia umožňuje nasledujúce:
 - vyhľadať bary, nalievarne, nočné kluby, kaviarne, reštaurácie a rýchle občerstvenie,
 - vyššie uvedené podniky je možné vyhľadať v okruhu od zvoleného bodu alebo v oblasti, ktorej hranice určí používateľ,
-- zobrazenie podnikov priamo na mape, ale aj v mennom zozname so vzdialenosťou od stredu oblasti vyhľadávania (čo je výhodné hľavne z dôvodu, že aplikácia využíva geo lokáciu),
+- zobrazenie podnikov priamo na mape, ale aj v mennom zozname so vzdialenosťou od stredu oblasti vyhľadávania (čo je výhodné hlavne z dôvodu, že aplikácia využíva geo lokáciu),
 - vyhľadanie trasy medzi dvomi alebo viacerými bodmi na mape, jej zobrazenie a výpočet dĺžky tejto trasy,
 - pre tých, ktorí "už majú dosť", aplikácia umožňuje zobraziť parky spolu s najdlhším chodníkom, ktorý ich pretína.
 
