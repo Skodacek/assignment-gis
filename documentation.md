@@ -23,12 +23,12 @@ Aplikácia je postavená na klient-server architektúre. Klientská časť použ
 
 # Frontend
 
-Klientska časť je dynamická HTML stránka (`views/index.html`), ktorá zobrazuje mapbox mapu. Používateľské rozhranie je tvorené dvomi výsuvnými panelmi po stranách obrazovky. Pravý panel slúži na zadávanie dopytov a v ľavom sú zobrazené výsledky dopytu vo forme zoznamu. Ovládacie prvky, dynamika stránky, zobrazenie výsledkov hľadania a AJAX volania sú spravované javascriptom v súbore (`assets/js/app.js`).
+Klientska časť je dynamická HTML stránka (`views/index.html`), ktorá zobrazuje mapbox mapu. Používateľské rozhranie je tvorené dvomi výsuvnými panelmi po stranách obrazovky. Pravý panel slúži na zadávanie dopytov a v ľavom sú zobrazené výsledky dopytu vo forme zoznamu. Ovládacie prvky, dynamika stránky, zobrazenie výsledkov hľadania a AJAX volania sú spravované javascriptom v súbore `assets/js/app.js`.
 Štýl mapy som prebral zo šablóny Dark a upravil som ju tak, aby si mi hodila k farebnému dizajnu stránky. Ďalej som upravil štýly textov a zmenil veľkosť fontov pri priblížení mapy. Taktiež som upravil farby ciest a plôch, ktoré nie sú pre tento projekt podstatné.
 
 # Backend
 
-Serverová časť je postavená na frameworku node.js, ako bolo spomenuté už vyššie. Zabezpečuje získavanie dát z databázy, ich spracovanie a odoslanie klientovi. Dopyty sa parametrizujú a vytvárajú podľa požiadaviek používateľa v module (`prepare_statement.js`). Bohužiaľ sa mi nepodarilo nájsť vhodný query builder pre node.js. Našiel som len jednoduché knižnice, ktoré nepodporovali SQL príkazy ako napríklad WITH alebo UNION, ktoré vo svojich dopytoch používam, preto som ich nemohol použiť. Na štastie konektor na databázu, ktorý vykonáva dopyt overuje dopyt proti prípadnému SQL injection. Po parametrizovaní sú dopyty prostredníctvom konektora vykonané nad databázou. Výsledok dopytu je následne transformovaný na geojson formát a odoslaný klientovi ako odpoveď na jeho AJAX volanie.
+Serverová časť je postavená na frameworku node.js, ako bolo spomenuté už vyššie. Zabezpečuje získavanie dát z databázy, ich spracovanie a odoslanie klientovi. Dopyty sa parametrizujú a vytvárajú podľa požiadaviek používateľa v module `prepare_statement.js`. Bohužiaľ sa mi nepodarilo nájsť vhodný query builder pre node.js. Našiel som len jednoduché knižnice, ktoré nepodporovali SQL príkazy ako napríklad WITH alebo UNION, ktoré vo svojich dopytoch používam, preto som ich nemohol použiť. Na štastie konektor na databázu, ktorý vykonáva dopyt overuje dopyt proti prípadnému SQL injection. Po parametrizovaní sú dopyty prostredníctvom konektora vykonané nad databázou. Výsledok dopytu je následne transformovaný na geojson formát a odoslaný klientovi ako odpoveď na jeho AJAX volanie.
 
 ## Data
 
@@ -39,26 +39,24 @@ Pre zrýchlenie dopytov som vytvoril indexy v tabuľkách bodov a polygónov nad
 
 Príklad query: Vyhľadanie parkov a najdlhšieho chodníka v danom parku + výpočet plochy parku v metroch štvorcových a dĺžky chodníka v danom parku
 
-`with sub as(
+```
+with sub as(
   select name, polygon, area, line, len as len from (
     (select name as name, way as polygon, st_area(way) as area from planet_osm_polygon as pl 
       where pl.leisure='park' 
       and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(pl.way, 4326)::geography) < 8000) as polygons
-
     cross join
-
     (select way as line, st_length(way) as len from planet_osm_line as ln 
       where (ln.highway='footway' or ln.highway='path') 
       and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(ln.way, 4326)::geography) < 8000) as lns) as lines
-
 where st_crosses(polygon, line)) 
-
 select name, ST_AsGeoJSON(ST_Transform(sub.polygon, 4326)) as polygon, area*POWER(0.3048,2) as area, ST_AsGeoJSON(ST_Transform(line, 4326)) as line, len from sub 
 inner join 
 (select polygon, max(len) as mx from sub 
 group by polygon) as subsub 
 on sub.polygon = subsub.polygon 
-and sub.len = subsub.mx`
+and sub.len = subsub.mx
+```
 
 ### Response
 
