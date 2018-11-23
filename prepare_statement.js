@@ -28,18 +28,45 @@ function radiusQuery(lng, lat, amenities, distance) {
 function dijkstra(s1, s2, e1, e2) {
 	let query = `with 
 				startPoint as (
-					SELECT source FROM network ORDER BY st_distance(st_transform(way,4326), ST_SetSRID(st_makepoint(${s1}, ${s2}), 4326)) limit 1), 
+					select source FROM network ORDER BY st_distance(st_transform(way,4326), ST_SetSRID(st_makepoint(${s1}, ${s2}), 4326)) limit 1), 
 				endPoint as (
-					SELECT target FROM network ORDER BY st_distance(st_transform(way,4326), ST_SetSRID(st_makepoint(${e1}, ${e2}), 4326)) limit 1)
+					select target FROM network ORDER BY st_distance(st_transform(way,4326), ST_SetSRID(st_makepoint(${e1}, ${e2}), 4326)) limit 1)
 
 				select st_length(way) as len, highway, st_asgeojson(st_transform(way,4326)) as gmt 
-				FROM pgr_dijkstra('SELECT osm_id as id, source, target, st_length(way) as cost FROM network', 
+				from pgr_dijkstra('select osm_id as id, source, target, st_length(way) as cost from network', 
 					(select * from startPoint), (select * from endPoint), false) as tbl 
 				join network on tbl.edge = network.osm_id`
 
 	return query
 }
 
+function walkOff() {
+	let query = `with sub as(
+					select name, polygon, area, line, len as len from (
+						(select name as name, way as polygon, st_area(way) as area from planet_osm_polygon as pl 
+							where pl.leisure='park' 
+							and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(pl.way, 4326)::geography) < 8000) as polygons
+
+						cross join
+
+						(select way as line, st_length(way) as len from planet_osm_line as ln 
+							where (ln.highway='footway' or ln.highway='path') 
+							and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(ln.way, 4326)::geography) < 8000) as lns) as lines
+
+					where st_crosses(polygon, line)) 
+
+					select name, ST_AsGeoJSON(ST_Transform(sub.polygon, 4326)) as polygon, area*POWER(0.3048,2) as area, ST_AsGeoJSON(ST_Transform(line, 4326)) as line, len from sub 
+					inner join 
+					(select polygon, max(len) as mx from sub 
+					group by polygon) as subsub 
+					on sub.polygon = subsub.polygon 
+					and sub.len = subsub.mx`
+
+	return query
+}
+
+
 module.exports.polygonQuery = polygonQuery
 module.exports.radiusQuery = radiusQuery
 module.exports.dijkstra = dijkstra
+module.exports.walkOff = walkOff

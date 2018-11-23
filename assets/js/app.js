@@ -11,7 +11,6 @@ $(document).ready(function() {
 			zoomOffset: -1,
 			attribution: ''
 		}).addTo(mymap);
-	
 	if ("geolocation" in navigator) {
 		navigator.geolocation.getCurrentPosition(function(position) {
 			
@@ -140,6 +139,8 @@ $(document).ready(function() {
 
 	$("#userDraw").attr("disabled", true)
 	$("#removeUserPolygon").attr("disabled", true)
+	$("#hideParks").attr("disabled", true)
+
 
 	let queryResultsOnMap = []
 
@@ -156,11 +157,11 @@ $(document).ready(function() {
 
 			coordinates = 0
 
-			let name = data[i].name;
+			let name = data[i].properties.name;
 			if(!name) 
 				name = 'Let surprise yourself';
-			let type = data[i].amenity;
-			let dist = data[i].dist;
+			let type = data[i].properties.amenity;
+			let dist = data[i].properties.dist;
 
 			let color, clas
 			if(type == 'bar'){
@@ -188,11 +189,11 @@ $(document).ready(function() {
 				clas = 'fast'
 			}
 
-			let geoType = JSON.parse(data[i].gmt).type;
+			let geoType = data[i].type;
 			
 			if(geoType == "Polygon"){
 				
-				coordinates = JSON.parse(data[i].gmt).coordinates[0];
+				coordinates = data[i].coordinates[0];
 				for(let j = 0; j < coordinates.length; j++)
 					coordinates[j].reverse();
 
@@ -218,7 +219,7 @@ $(document).ready(function() {
 			}
 			else if(geoType == 'Point'){
 
-				coordinates = JSON.parse(data[i].gmt).coordinates.reverse();
+				coordinates = data[i].coordinates.reverse();
 
 				let e = L.circle(coordinates, 5, {color: color, fillColor: color, fillOpacity: 0.3}).addTo(mymap).bindPopup('<h4>' + name +'</h4><div>Typ podniku:' + type + '</div>');
 				queryResultsOnMap.push(e)
@@ -251,8 +252,6 @@ $(document).ready(function() {
 	}
 
 	function drawRoads(data){
-		
-		let total = 0
 
 		if(!data.length){
 			$(".pathResHead").text("Path not found")
@@ -261,12 +260,12 @@ $(document).ready(function() {
 
 		for(let i = 0; i < data.length; i++){
 
-			let type = data[i].highway;
+			let type = data[i].properties.highway;
 
-			let len = data[i].len;
+			let len = data[i].properties.len;
 			total += len
 
-			let coordinates = JSON.parse(data[i].gmt).coordinates;
+			let coordinates = data[i].coordinates;
 			for(let j = 0; j < coordinates.length; j++)
 				coordinates[j].reverse();
 
@@ -279,6 +278,61 @@ $(document).ready(function() {
 			$("#pathLen").text('Path length ' + total.toFixed(0) + ' m')
 			$(".pathRes").animate({ bottom : "-20px"});
 	}
+
+	function drawParks(data){
+
+		removeParks()
+
+		$("#hideParks").removeAttr("disabled")
+		$("#walkOff").attr("disabled", true)
+
+		for(let i = 0; i < data.length; i++){
+
+			let type = data[i].type
+
+			if(type == "Polygon"){
+
+				let name = data[i].properties.name
+				if(!name)
+					name = 'Let surprise yourself'
+				let area = data[i].properties.area
+
+				let coordinates = data[i].coordinates[0];
+				for(let j = 0; j < coordinates.length; j++)
+					coordinates[j].reverse();
+
+				let e = L.polygon(coordinates, {color: "#10c100", fillColor: "#10c100", fillOpacity: 0.01, weight: 1}).addTo(mymap).bindPopup('<h4>' + name +'</h4><div>Rozloha:' + area.toFixed(0) + ' m<sup>2</sup></div>');
+				parks.push(e)
+
+			} else {
+
+				let len = data[i].properties.length
+
+				let coordinates = data[i].coordinates;
+				for(let j = 0; j < coordinates.length; j++)
+					coordinates[j].reverse();
+
+				let e = L.polyline(coordinates, {color: '#ce46ca', fillColor: '#ce46ca', fillOpacity: 0.05, weight: 3}).addTo(mymap).bindPopup('<div> ' + len.toFixed(0) + 'm </div>');
+				parks.push(e)
+			}
+		}
+		
+	}
+
+	function removeParks(){
+		for(let i = 0; i < parks.length; i++){
+			mymap.removeLayer(parks[i])
+		}
+
+		parks = []
+	}
+
+	$('#hideParks').on('click',function(e){
+		removeParks()
+		
+		$("#walkOff").removeAttr("disabled")
+		$("#hideParks").attr("disabled", true)
+	})
 
 	let upp = [];
 	let uppCoord = [];
@@ -293,6 +347,8 @@ $(document).ready(function() {
 	let markersCoord = []
 	let path = []
 	let circle
+	let polygonChanged = true
+	let parks = []
 	
 	let SearchArea = {
 	    type: "PolygonSearchArea",
@@ -346,10 +402,12 @@ $(document).ready(function() {
 
 		if(!inRadius){
 
-			for(let i = 0; i < uppCoord.length; i++)
-				uppCoord[i].reverse()
+			if(polygonChanged){
+				for(let i = 0; i < uppCoord.length; i++)
+					uppCoord[i].reverse()
 
-			uppCoord.push(uppCoord[0]) //kvoli uzatvoreniu polygonu
+				uppCoord.push(uppCoord[0]) //kvoli uzatvoreniu polygonu
+			}
 
 			SearchArea.geometry.coordinates = []
 			SearchArea.geometry.coordinates.push(uppCoord);
@@ -371,6 +429,8 @@ $(document).ready(function() {
 					console.log("Details: " + desc + "\nError:" + err);
 				}
 			});
+
+			polygonChanged = false
 
 		} else {
 
@@ -451,14 +511,33 @@ $(document).ready(function() {
 						console.log("Details: " + desc + "\nError:" + err);
 					}
 				});
-			
 		}
+		
+	});
+
+	$('#walkOff').on('click',function(e){
+		e.preventDefault();
+
+		$.ajax({
+			url: '/walkoff',
+			method: 'GET',
+			data: SearchArea,
+	        contentType: 'application/json',
+			success: function (data) {
+				drawParks(data);
+			},
+			error: function(xhr, desc, err) {
+				console.log(xhr);
+				console.log("Details: " + desc + "\nError:" + err);
+			}
+		});
 		
 	});
 
 	$('#userDraw').on('click',function(e){
 		e.preventDefault();
 		
+		polygonChanged = true
 
 		if(!drawing){
 			mymap.on('click', userPolygonClick);

@@ -427,3 +427,15 @@ label{
   color: #38b6c2;
   font-size: 23px;
 }
+
+.parksBtnWrap{
+  padding-top: 40px;
+}
+
+#walkOff{
+  width: 75%;
+}
+
+#hideParks{
+  width: 23%;
+}

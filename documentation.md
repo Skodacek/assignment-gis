@@ -1,63 +1,91 @@
-NABOMBENA dokumentacia is coming
-*This is a documentation for a fictional project, just to show you what I expect. Notice a few key properties:*
-- *no cover page, really*
-- *no copy&pasted assignment text*
-- *no code samples*
-- *concise, to the point, gets me a quick overview of what was done and how*
-- *I don't really care about the document length*
-- *I used links where appropriate*
-
 # Overview
 
-This application shows hotels in Bratislava on a map. Most important features are:
-- search by proximity to my current location
-- search by hotel name
-- intelligent ordering - by proximity and by hotel features
-- hotels on the map are color coded by their quality assigned in stars (standard)
+Táto aplikácia, je určená pre tých, ktorí si chcú na voľný víkendový večer naplánovať "Tour de Bar", prípadne len hľadajú miesto kam ísť po práci vypnúť. Aplikácia tieto miesta zobrazí na mape s doplňujúcimi informáciami. Konkrétne aplikácia umožňuje nasledujúce:
+- vyhľadať bary, nalievarne, nočné kluby, kaviarne, reštaurácie a rýchle občerstvenie,
+- vyššie uvedené podniky je možné vyhľadať v okruhu od zvoleného bodu alebo v oblasti, ktorej hranice určí používateľ,
+- zobrazenie podnikov priamo na mape, ale aj v mennom zozname so vzdialenosťou od stredu oblasti vyhľadávania,
+- vyhľadanie trasy medzi dvomi alebo viacerými bodmi na mape, jej zobrazenie a výpočet dĺžky tejto trasy,
+- pre tých, ktorí "už majú dosť", aplikácia umožňuje zobraziť parky spolu s najdlhším chodníkom, ktorý ich pretína.
 
-This is it in action:
+Ukážka vyhľadávania v aplikácii, konkrétne v oblasti určenej používateľom.
 
 ![Screenshot](screenshot.png)
 
-The application has 2 separate parts, the client which is a [frontend web application](#frontend) using mapbox API and mapbox.js and the [backend application](#backend) written in [Rails](http://rubyonrails.org/), backed by PostGIS. The frontend application communicates with backend using a [REST API](#api).
+Ukážka vyhľadávania trasy medzi viacerými bodmi.
+
+![Screenshot](screenshot2.png)
+
+Ukážka vyhľadávania parkov.
+
+![Screenshot](screenshot3.png)
+
+Aplikácia je postavená na klient-server architektúre. Klientská časť používa na zobrazenie mapy mapbox API prostredníctvom knižnice mapbox.js, elementy sú na mape spravované leaflet.js knižnicou. Serverová časť je implementovaná frameworkom node.js. Ako databáza je použitá databáza PostgreSQL s rozšírením PostGIS. Kleintská časť komunikuje so serverom prostredníctvom AJAX volaní.
 
 # Frontend
 
-The frontend application is a static HTML page (`index.html`), which shows a mapbox.js widget. It is displaying hotels, which are mostly in cities, thus the map style is based on the Emerald style. I modified the style to better highlight main sightseeing points, restaurants and bus stops, since they are all important when selecting a hotel. I also highlighted rails tracks to assist in finding a quiet location.
-
-All relevant frontend code is in `application.js` which is referenced from `index.html`. The frontend code is very simple, its only responsibilities are:
-- detecting user's location, using the standard [web location API](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/Using_geolocation)
-- displaying the sidebar panel with hotel list and filtering controls, driving the user interaction and calling the appropriate backend APIs
-- displaying geo features by overlaying the map with a geojson layer, the geojson is provided directly by backend APIs
+Klientska časť je dynamická HTML stránka (`views/index.html`), ktorá zobrazuje mapbox mapu. Používateľské rozhranie je tvorené dvomi výsuvnými panelmi po stranách obrazovky. Pravý panel slúži na zadávanie dopytov a v ľavom sú zobrazené výsledky dopytu vo forme zoznamu. Ovládacie prvky, dynamika stránky, zobrazenie výsledkov hľadania a AJAX volania sú spravované javascriptom v súbore (`assets/js/app.js`).
+Štýl mapy som prebral zo šablóny Dark a upravil som ju tak, aby si mi hodila k farebnému dizajnu stránky. Ďalej som upravil štýly textov a zmenil veľkosť fontov pri priblížení mapy. Taktiež som upravil farby ciest a plôch, ktoré nie sú pre tento projekt podstatné.
 
 # Backend
 
-The backend application is written in Ruby on Rails and is responsible for querying geo data, formatting the geojson and data for the sidebar panel.
+Serverová časť je postavená na frameworku node.js, ako bolo spomenuté už vyššie. Zabezpečuje získavanie dát z databázy, ich spracovanie a odoslanie klientovi. Dopyty sa parametrizujú a vytvárajú podľa požiadaviek používateľa v module (`prepare_statement.js`). Bohužiaľ sa mi nepodarilo nájsť vhodný query builder pre node.js. Našiel som len jednoduché knižnice, ktoré nepodporovali SQL príkazy ako napríklad WITH alebo UNION, ktoré vo svojich dopytoch používam, preto som ich nemohol použiť. Na štastie konektor na databázu, ktorý vykonáva dopyt overuje dopyt proti prípadnému SQL injection. Po parametrizovaní sú dopyty prostredníctvom konektora vykonané nad databázou. Výsledok dopytu je následne transformovaný na geojson formát a odoslaný klientovi ako odpoveď na jeho AJAX volanie.
 
 ## Data
 
-Hotel data is coming directly from Open Street Maps. I downloaded an extent covering whole Slovakia (around 1.2GB) and imported it using the `osm2pgsql` tool into the standard OSM schema in WGS 84 with hstore enabled. To speedup the queries I created an index on geometry column (`way`) in all tables. The application follows standard Rails conventions and all queries are placed in models inside `app/models`, mostly in `app/models/hotel.rb`. GeoJSON is generated by using a standard `st_asgeojson` function, however some postprocessing is necessary (in `app/controllers/search_controller.rb`) in order to merge all hotels into a single geojson.
+Dáta sú stiahnuté z Open Street Maps. Stiahol som dáta pre celú oblasť Slovenskej republiky a importoval ich prostredníctvom osm2pgsql.
+Pre zrýchlenie dopytov som vytvoril indexy v tabuľkách bodov a polygónov nad stĺpcom 'amenity'. Ďalej bolo potrebné vytvoriť (a filtrovať) zvlášť tabuľku ciest pre rozšírenie 'pgrouting', ktoré hľadá najkratšiu cestu medzi zvolenými bodmi.
 
-## Api
+## Query
 
-**Find hotels in proximity to coordinates**
+Príklad query: Vyhľadanie parkov a najdlhšieho chodníka v danom parku + výpočet plochy parku v metroch štvorcových a dĺžky chodníka v danom parku
 
-`GET /search?lat=25346&long=46346123`
+`with sub as(
+  select name, polygon, area, line, len as len from (
+    (select name as name, way as polygon, st_area(way) as area from planet_osm_polygon as pl 
+      where pl.leisure='park' 
+      and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(pl.way, 4326)::geography) < 8000) as polygons
 
-**Find hotels by name, sorted by proximity and quality**
+    cross join
 
-`GET /search?name=hviezda&lat=25346&long=46346123`
+    (select way as line, st_length(way) as len from planet_osm_line as ln 
+      where (ln.highway='footway' or ln.highway='path') 
+      and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(ln.way, 4326)::geography) < 8000) as lns) as lines
+
+where st_crosses(polygon, line)) 
+
+select name, ST_AsGeoJSON(ST_Transform(sub.polygon, 4326)) as polygon, area*POWER(0.3048,2) as area, ST_AsGeoJSON(ST_Transform(line, 4326)) as line, len from sub 
+inner join 
+(select polygon, max(len) as mx from sub 
+group by polygon) as subsub 
+on sub.polygon = subsub.polygon 
+and sub.len = subsub.mx`
 
 ### Response
 
-API calls return json responses with 2 top-level keys, `hotels` and `geojson`. `hotels` contains an array of hotel data for the sidebar, one entry per matched hotel. Hotel attributes are (mostly self-evident):
+Odpoveď na vyššie uvedené query: pole geoJSON objektov s 
+
 ```
-{
-  "name": "Modra hviezda",
-  "style": "modern", # cuisine style
-  "stars": 3,
-  "address": "Panska 31"
-  "image_url": "/assets/hotels/652.png"
+...
+{  
+   "type":"Polygon",
+   "coordinates":[  
+      [  
+         ...
+      ]
+   ],
+   "properties":{  
+      "name":Sad Janka Kráľa,
+      "area":1949.333259285
+   }
 }
+{  
+   "type":"LineString",
+   "coordinates":[  
+      ...
+   ],
+   "properties":{  
+      "length":214.037821800302
+   }
+}
+...
 ```
-`geojson` contains a geojson with locations of all matched hotels and style definitions.

@@ -16,12 +16,12 @@ Build a map-based application, which lets the user see geo-based data on a map a
 
 - [Open Street Maps](https://www.openstreetmap.org/)
 
-## My project
+## Tour de Bar
 
 Fill in (either in English, or in Slovak):
 
-**Application description**: `<fill in>`
+**Application description**: `Aplikácia slúžiaca na vyhľadávanie a zobrazenie barov, nalievarní, nočných klubov, kaviarní, reštaurácií a rýchlych občerstvení vo vzdialenosti od určitého bodu alebo v oblasti určenej používateľom. Ďalej umožňuje hľadanie najkratšej cesty medzi dvomi alebo viacerými bodmi na mape. Aplikácia tiež zobrazuje parky s najdlhšou cestou prechádzajúcou cez daný park. Okrem toho, že sú výsledky dopytov zobrazené na mape, sú zobrazené aj vo forme zoznamu v príjemnom používateľskom prostredí.`
 
-**Data source**: `<fill in>`
+**Data source**: `Open Street Maps`
 
-**Technologies used**: `<fill in>`
+**Technologies used**: `Node.js, PostGIS, Pgrouting, geoJSON, Mapbox.js, Leaflet.js, jQuery`

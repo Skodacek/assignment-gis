@@ -13,7 +13,7 @@ const pool = new pg.Pool({
 	port: '5432'
 });
 
-let rows;
+let rows = [];
 
 app.use(bp.json());
 app.use(bp.urlencoded({ extended: false }));
@@ -33,8 +33,16 @@ app.get('/searchInPolygon', async (request, result) => {
 	let amenities = request.query.amenities
 
 	await pool.query(queryBuilder.polygonQuery(userPolygon, amenities), (err, res) => {
-		rows = res.rows;
+
+		for(i = 0; i < res.rows.length; i++){
+			row = res.rows[i]
+			row.gmt = JSON.parse(row.gmt)
+			row.gmt['properties'] = {'name':row.name, 'amenity':row.amenity, 'dist':row.dist}
+			rows.push(row.gmt)
+		}
+
 		result.send(rows);
+		rows = []
 	});
 
 })
@@ -47,8 +55,16 @@ app.get('/searchInRadius', async (request, result) => {
 	let distance = request.query.distance
 
 	await pool.query(queryBuilder.radiusQuery(lng, lat, amenities, distance), (err, res) => {
-		rows = res.rows;
+
+		for(i = 0; i < res.rows.length; i++){
+			row = res.rows[i]
+			row.gmt = JSON.parse(row.gmt)
+			row.gmt['properties'] = {'name':row.name, 'amenity':row.amenity, 'dist':row.dist}
+			rows.push(row.gmt)
+		}
+
 		result.send(rows);
+		rows = []
 	});
 
 })
@@ -66,14 +82,38 @@ app.get('/dijkstra', async (request, result) => {
 		let end = request.query.geometry.coordinates[0][i+1]
 
 		pool.query(queryBuilder.dijkstra(start[0], start[1], end[0], end[1]), (err, res) => {
-			fullPath = fullPath.concat(res.rows);
-			//pool.end();
+			
+			for(let j = 0; j < res.rows.length; j++){
+				row = res.rows[j]
+				row.gmt = JSON.parse(row.gmt)
+				row.gmt['properties'] = {'len':row.len, 'highway':row.highway}
+				fullPath.push(row.gmt)
+			}
+			
 			if(i == request.query.geometry.coordinates[0].length - 2){
 				result.send(fullPath);
 			}
 		});
 
 	}	
+
+})
+
+app.get('/walkoff', async (request, result) => {
+
+	await pool.query(queryBuilder.walkOff(), (err, res) => {
+		for(let j = 0; j < res.rows.length; j++){
+			row = res.rows[j]
+			let polygon = JSON.parse(row.polygon)
+			let line = JSON.parse(row.line)
+			polygon['properties'] = {'name': row.name, 'area': row.area}
+			line['properties'] = {'length': row.len}
+			rows.push(polygon)
+			rows.push(line)
+		}
+		console.log(rows)
+		result.send(rows);
+	});
 
 })
 
