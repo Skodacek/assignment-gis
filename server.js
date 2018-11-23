@@ -111,7 +111,6 @@ app.get('/walkoff', async (request, result) => {
 			rows.push(polygon)
 			rows.push(line)
 		}
-		console.log(rows)
 		result.send(rows);
 	});
 
