@@ -56,6 +56,7 @@ inner join
 group by polygon) as subsub 
 on sub.polygon = subsub.polygon 
 and sub.len = subsub.mx
+order by area desc
 ```
 
 ### Response
