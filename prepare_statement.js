@@ -60,7 +60,8 @@ function walkOff() {
 					(select polygon, max(len) as mx from sub 
 					group by polygon) as subsub 
 					on sub.polygon = subsub.polygon 
-					and sub.len = subsub.mx`
+					and sub.len = subsub.mx
+					order by area desc`
 
 	return query
 }

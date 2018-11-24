@@ -101,6 +101,8 @@ app.get('/dijkstra', async (request, result) => {
 
 app.get('/walkoff', async (request, result) => {
 
+	rows = []
+
 	await pool.query(queryBuilder.walkOff(), (err, res) => {
 		for(let j = 0; j < res.rows.length; j++){
 			row = res.rows[j]

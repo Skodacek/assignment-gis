@@ -282,7 +282,9 @@ $(document).ready(function() {
 	function drawParks(data){
 
 		removeParks()
+		parks = []
 
+		$("#results").html('')
 		$("#hideParks").removeAttr("disabled")
 		$("#walkOff").attr("disabled", true)
 
@@ -294,15 +296,31 @@ $(document).ready(function() {
 
 				let name = data[i].properties.name
 				if(!name)
-					name = 'Let surprise yourself'
+					name = 'Not named park'
 				let area = data[i].properties.area
 
 				let coordinates = data[i].coordinates[0];
 				for(let j = 0; j < coordinates.length; j++)
 					coordinates[j].reverse();
 
-				let e = L.polygon(coordinates, {color: "#10c100", fillColor: "#10c100", fillOpacity: 0.01, weight: 1}).addTo(mymap).bindPopup('<h4>' + name +'</h4><div>Rozloha:' + area.toFixed(0) + ' m<sup>2</sup></div>');
+				let e = L.polygon(coordinates, {color: "#10c100", fillColor: "#10c100", fillOpacity: 0.01, weight: 1}).addTo(mymap).bindPopup('<h4>' + name +'</h4><div>Rozloha: ' + area.toFixed(0) + ' m<sup>2</sup></div>');
 				parks.push(e)
+
+				let div = document.createElement('div');
+				div.className = 'elm blue'
+				div.innerHTML = "<div>" + name + "</div><div class=dist> " + area.toFixed(0) +  " m<sup>2</sup></div>"
+				$(div).attr('data_lat', e.getBounds().getCenter().lat)
+				$(div).attr('data_lng', e.getBounds().getCenter().lng)
+				$(div).attr('data_name', name)
+				$(div).attr('data_type', area)
+
+				$(div).on('click', ()=>{
+					popup.setLatLng([$(div).attr('data_lat'),$(div).attr('data_lng')]) 
+						 .setContent('<h4>' + $(div).attr('data_name') +'</h4><div>Rozloha: ' + area.toFixed(0) + ' m<sup>2</sup></div>')
+						 .openOn(mymap);
+				})
+
+				document.getElementById('results').appendChild(div)
 
 			} else {
 
@@ -314,9 +332,11 @@ $(document).ready(function() {
 
 				let e = L.polyline(coordinates, {color: '#ce46ca', fillColor: '#ce46ca', fillOpacity: 0.05, weight: 3}).addTo(mymap).bindPopup('<div> ' + len.toFixed(0) + 'm </div>');
 				parks.push(e)
+
 			}
+			$("#results").append('<hr>')
 		}
-		
+		$(".results").animate({ left : "0px"});
 	}
 
 	function removeParks(){
@@ -325,6 +345,7 @@ $(document).ready(function() {
 		}
 
 		parks = []
+		$("#results").html('')
 	}
 
 	$('#hideParks').on('click',function(e){

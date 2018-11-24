@@ -43,17 +43,21 @@ body{
   cursor: pointer;
 }
 
+.results .elm.blue{
+  color: #38b6c2;
+}
+
 .results .elm:hover{
   background: rgba(255,255,255, 0.1);
 }
 
 .results .elm div{
   display: inline-block;
-  width: 80%;
+  width: 75%;
 }
 
 .results .dist{
-  width: 20% !important;
+  width: 25% !important;
   text-align: right;
   font-size: 18px
 }
