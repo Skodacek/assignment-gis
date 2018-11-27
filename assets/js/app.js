@@ -540,10 +540,18 @@ $(document).ready(function() {
 	$('#walkOff').on('click',function(e){
 		e.preventDefault();
 
+		let coord = {}
+		coord.lat = circle.getLatLng().lat;
+		coord.lng = circle.getLatLng().lng;
+
+		let dataFrame = {}
+		dataFrame['coords'] = coord
+		dataFrame['distance'] = distance
+
 		$.ajax({
 			url: '/walkoff',
 			method: 'GET',
-			data: SearchArea,
+			data: dataFrame,
 	        contentType: 'application/json',
 			success: function (data) {
 				drawParks(data);

@@ -37,18 +37,18 @@ function dijkstra(s1, s2, e1, e2) {
 	return query
 }
 
-function walkOff() {
+function walkOff(lng, lat, distance) {
 	let query = `with sub as(
 					select name, polygon, area, line, len as len from (
 						(select name as name, way as polygon, st_area(way) as area from planet_osm_polygon as pl 
 							where pl.leisure='park' 
-							and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(pl.way, 4326)::geography) < 8000) as polygons
+							and ST_Distance(ST_SetSRID(st_makepoint(${lng}, ${lat}), 4326)::geography, ST_Transform(pl.way, 4326)::geography) < ${distance}) as polygons
 
 						cross join
 
 						(select way as line, st_length(way) as len from planet_osm_line as ln 
 							where (ln.highway='footway' or ln.highway='path') 
-							and ST_Distance(ST_GeomFromText('POINT(17.102378 48.153644)', 4326)::geography, ST_Transform(ln.way, 4326)::geography) < 8000) as lns) as lines
+							and ST_Distance(ST_SetSRID(st_makepoint(${lng}, ${lat}), 4326)::geography, ST_Transform(ln.way, 4326)::geography) < ${distance}) as lns) as lines
 
 					where st_crosses(polygon, line)) 
 

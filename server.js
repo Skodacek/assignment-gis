@@ -183,6 +183,10 @@ app.get('/walkoff', async (request, result) => {
 
 	rows = []
 
+	let lng = request.query.coords.lng
+	let lat = request.query.coords.lat
+	let distance = request.query.distance
+
 	/* not working
 	knex.with('sub', (qb) => qb.select('name, polygon, area, line, len as len')
 	.from(function(){
@@ -212,7 +216,7 @@ app.get('/walkoff', async (request, result) => {
 		console.log( err); throw err 
 	})*/
 
-	await pool.query(queryBuilder.walkOff(), (err, res) => {
+	await pool.query(queryBuilder.walkOff(lng, lat, distance), (err, res) => {
 		for(let j = 0; j < res.rows.length; j++){
 			row = res.rows[j]
 			let polygon = JSON.parse(row.polygon)
