@@ -22,4 +22,4 @@ Build a map-based application, which lets the user see geo-based data on a map a
 
 **Data source**: `Open Street Maps`
 
-**Technologies used**: `Node.js, PostGIS, Pgrouting, geoJSON, Mapbox.js, Leaflet.js, jQuery`
+**Technologies used**: `Node.js, PostGIS, pgRouting, geoJSON, Knex.js, Mapbox.js, Leaflet.js, jQuery`
