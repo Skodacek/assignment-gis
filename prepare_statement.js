@@ -1,5 +1,4 @@
 function polygonQuery(userPolygon, amenities) {
-	userPolygon =  "'" + JSON.stringify(userPolygon) + "'"
 	let query = `select st_distance(ST_PointFromText(ST_AsText(ST_Centroid(ST_GeomFromGeoJSON(${userPolygon}))), 4326)::geography ,ST_Transform(way, 4326)) as dist, amenity, name, ST_AsGeoJSON(ST_Transform(way, 4326)) as gmt 
 					from (
 						select pol.amenity, pol.way, pol.name from planet_osm_polygon pol 
@@ -8,7 +7,6 @@ function polygonQuery(userPolygon, amenities) {
 					where ${amenities} 
 					and st_contains(ST_GeomFromGeoJSON(${userPolygon}), ST_Transform(way, 4326)) 
 					order by st_distance(ST_PointFromText(ST_AsText(ST_Centroid(ST_GeomFromGeoJSON(${userPolygon}))), 4326)::geography ,ST_Transform(way, 4326))`
-
 	return query
 }
 
@@ -31,7 +29,6 @@ function dijkstra(s1, s2, e1, e2) {
 					select source FROM network ORDER BY st_distance(st_transform(way,4326), ST_SetSRID(st_makepoint(${s1}, ${s2}), 4326)) limit 1), 
 				endPoint as (
 					select target FROM network ORDER BY st_distance(st_transform(way,4326), ST_SetSRID(st_makepoint(${e1}, ${e2}), 4326)) limit 1)
-
 				select st_length(way) as len, highway, st_asgeojson(st_transform(way,4326)) as gmt 
 				from pgr_dijkstra('select osm_id as id, source, target, st_length(way) as cost from network', 
 					(select * from startPoint), (select * from endPoint), false) as tbl 
@@ -65,7 +62,6 @@ function walkOff() {
 
 	return query
 }
-
 
 module.exports.polygonQuery = polygonQuery
 module.exports.radiusQuery = radiusQuery
