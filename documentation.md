@@ -88,3 +88,4 @@ Odpoveď na vyššie uvedené query: pole geoJSON objektov s
 }
 ...
 ```
+Vypracoval: Martin Škodáček
